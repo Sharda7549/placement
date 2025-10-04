@@ -3,17 +3,17 @@ import numpy as np
 import pickle
 
 # ---------------- Load the trained model ----------------
-with open("placements.pkl", "rb") as f:
+with open("diabetes.pkl", "rb") as f:
     model = pickle.load(f)
 
 # ---------------- Page configuration ----------------
-st.set_page_config(page_title="Placement Predictor", page_icon="🎓", layout="centered")
+st.set_page_config(page_title="Diabetes Predictor", page_icon="🩺", layout="centered")
 
 # ---------------- Inline HTML + CSS ----------------
 st.markdown(
     """
     <style>
-    /* -------- Global page background with animated blue gradient -------- */
+    /* -------- Global background with animated gradient -------- */
     body {
         background: linear-gradient(-45deg, #1e3c72, #2a5298, #4e73df, #1e3c72);
         background-size: 400% 400%;
@@ -34,7 +34,7 @@ st.markdown(
         padding: 2rem;
         margin: auto;
         width: 90%;
-        max-width: 500px;
+        max-width: 650px;
         box-shadow: 0 0 20px rgba(0,0,0,0.25);
     }
     h1 {
@@ -103,11 +103,11 @@ st.markdown(
 )
 
 # ---------------- Title & container ----------------
-st.markdown("<div class='card'><h1>🎓 Placement Predictor</h1>", unsafe_allow_html=True)
+st.markdown("<div class='card'><h1>🩺 Diabetes Predictor</h1>", unsafe_allow_html=True)
 
 st.markdown(
     "<p style='text-align:center;font-size:1.1rem;'>"
-    "Enter your <b>CGPA</b> and <b>IQ</b> to check your placement chances."
+    "Enter patient details to predict the <b>likelihood of diabetes</b>."
     "</p>",
     unsafe_allow_html=True
 )
@@ -115,19 +115,26 @@ st.markdown(
 # ---------------- Inputs ----------------
 col1, col2 = st.columns(2)
 with col1:
-    cgpa = st.number_input("CGPA", min_value=0.0, max_value=10.0, step=0.1, format="%.2f")
+    glucose_bmi = st.number_input("Glucose × BMI Interaction", min_value=0.0, format="%.2f")
+    glucose = st.number_input("Glucose", min_value=0.0, format="%.2f")
+    bmi = st.number_input("BMI", min_value=0.0, format="%.2f")
+    bmi_dpf = st.number_input("BMI × DiabetesPedigreeFunction", min_value=0.0, format="%.2f")
+
 with col2:
-    iq = st.number_input("IQ", min_value=50, max_value=200, step=1)
+    age = st.number_input("Age", min_value=0, step=1)
+    preg_age = st.number_input("Pregnancies × Age Interaction", min_value=0.0, format="%.2f")
+    dpf = st.number_input("Diabetes Pedigree Function", min_value=0.0, format="%.3f")
+    bp = st.number_input("Blood Pressure", min_value=0.0, format="%.2f")
 
 # ---------------- Prediction ----------------
 if st.button("Predict"):
-    X = np.array([[cgpa, iq]])
+    X = np.array([[glucose_bmi, glucose, bmi, bmi_dpf, age, preg_age, dpf, bp]])
     pred = model.predict(X)[0]
     prob = model.predict_proba(X)[0][1] if hasattr(model, "predict_proba") else 0.0
     pct = int(round(prob * 100))
 
-    result_text = "✅ Will be Placed" if pred == 1 else "❌ Not Likely to be Placed"
-    color = "#4dd0e1" if pred == 1 else "#ef5350"
+    result_text = "⚠️ High Risk: Likely Diabetic" if pred == 1 else "✅ Low Risk: Unlikely Diabetic"
+    color = "#ef5350" if pred == 1 else "#4dd0e1"
 
     st.markdown(
         f"""
@@ -135,7 +142,7 @@ if st.button("Predict"):
             <h2 style="color:{color};margin-bottom:0.5rem;">{result_text}</h2>
         </div>
         <div class="meter-wrap">
-            <div class="circle" style="--target:{pct}%;">
+            <div class="circle" style="--target:{pct}%;background: conic-gradient({color} var(--target), rgba(255,255,255,0.15) 0%);">
                 <span>{pct}%</span>
             </div>
         </div>
